@@ -37,10 +37,10 @@ def count_kmers(seq, k, max_at):
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(usage='python pyksift.py -o out.fa sequences.fa')
 
     parser.add_argument('infasta', help='input fasta file', type=parser_resolve_path)
-    parser.add_argument('-o', help='name of output fasta (default: stdout)', type=parser_resolve_path, metavar='outFasta')
+    parser.add_argument('-o', help='name of output fasta', type=parser_resolve_path, metavar='outFasta', required=True)
     parser.add_argument('-t', help='number of CPUs threads to use (default: 1)', type=int, metavar='numthreads', default=1)
     parser.add_argument('-k', help='length of kmer to use (default: 10)', type=int, metavar='klegnth', default=10)
     parser.add_argument('-a', help='max AT proportion allowed in a kmer for use in calculating median kmer abundance (default: 0.7)',
@@ -73,10 +73,8 @@ if __name__ == '__main__':
     with Pool(processes=args.t) as pool:
         result = pool.starmap(worker, zip(records, repeat(args)))
 
-    if args.o is None:
-        print(''.join(result))
-    else:
-        with open(args.o, 'w') as outfile:
-            outfile.write(''.join(result))
+    print('Writing selected sequences in file...', file=sys.stderr)
+    with open(args.o, 'w') as outfile:
+        outfile.write(''.join(result))
 
     print('Done', file=sys.stderr)
