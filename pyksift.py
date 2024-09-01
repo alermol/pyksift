@@ -53,6 +53,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    assert args.t > 0, 'Numbers of threads (-t) must be >0'
+    assert args.k > 0, 'Kmer length (-k) must be >0'
+    assert (args.a > 0) and (args.a <= 1), 'Max AT proportion (-a) must be in (0, 1]'
+    assert args.j > 0, 'Number of top kmers (-j) must be >0'
+    assert args.m > 0, 'minimum median of the top kmers (-m) must be >0'
+    assert args.l > 0, 'minumum length of the sequence (-l) must be >0'
+    assert args.k <= args.l, 'kmer length (-k) must be greater than minumum length of the sequence (-l)'
+
 
     def worker(record, args):
         if (len(record.seq) < args.l) or (args.n and ('N' in str(record.seq))):
