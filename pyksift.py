@@ -81,7 +81,7 @@ if __name__ == '__main__':
     with Pool(processes=args.t) as pool:
         result = pool.starmap(worker, zip(records, repeat(args)))
 
-    print('Writing selected sequences in file...', file=sys.stderr)
+    print(f'Writing {len(result)} selected sequences in file...', file=sys.stderr)
     with open(args.o, 'w') as outfile:
         outfile.write(''.join(result))
 
