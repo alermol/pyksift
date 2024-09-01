@@ -70,6 +70,7 @@ if __name__ == '__main__':
     if shutil.which('yass') is None:
         sys.exit('yass executable is not found in PATH variable. Exit.')
     else:
+        yass_ex = shutil.which('yass')
         print('yass executable is found in PATH variable. Continue.', file=sys.stderr)
 
     def worker(record, args):
@@ -102,7 +103,7 @@ if __name__ == '__main__':
         seq_name = seq.strip('>').split('\n')[0]
         with tempfile.NamedTemporaryFile(mode='w', dir=args.o.parent, suffix='.fa') as tfasta:
             tfasta.write(seq)
-            yass_out = run(f'yass -d 3 {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
+            yass_out = run(f'{yass_ex} -d 3 {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
             yass_out = [i for i in yass_out.stdout.decode().split('\n') if i != '']
             with open(f'{args.o}.yass.tsv', 'a') as outfile:
                 for line in yass_out:
