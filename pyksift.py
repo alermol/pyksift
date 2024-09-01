@@ -3,9 +3,7 @@ import sys
 from statistics import median
 from pathlib import Path
 from multiprocessing import Pool
-import tqdm
 from itertools import repeat
-import threading
 
 
 def parser_resolve_path(path):
@@ -13,7 +11,7 @@ def parser_resolve_path(path):
 
 
 def calc_AT_frac(seq):
-    res = (seq.count('A') + seq.count('G')) / len(seq)
+    res = (seq.count('A') + seq.count('T')) / len(seq)
     return res
 
 
@@ -29,6 +27,8 @@ def count_kmers(seq, k, max_at):
                 kmers[seq[(i - k):i]] = 1
             else:
                 kmers[seq[(i - k):i]] += 1
+    if len(kmers) == 0:
+        return None
     res = tuple((kmer, i) for kmer, i in kmers.items())
     return sorted(res, key=lambda x: x[1], reverse=True)
 
@@ -54,46 +54,29 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 
-    def process_record(record, args):
+    def worker(record, args):
         if (len(record.seq) < args.l) or (args.n and ('N' in str(record.seq))):
             return ''
         else:
             kmers = count_kmers(str(record.seq), args.k, args.a)[:(args.j + 1)]
-            if median([i[1] for i in kmers]) >= args.m:
+            if kmers is None:
+                return ''
+            elif median([i[1] for i in kmers]) >= args.m:
                 return f'>{record.id}\n{record.seq}\n'
             else:
                 return ''
 
-    
     print('Reading fasta file...', file=sys.stderr)
-    reads = SeqIO.index(args.infasta, 'fasta')
+    records = list(SeqIO.parse(args.infasta, 'fasta'))
 
-    rp, rf, rd = 0, 0, 0
-    res = []
-    print('Start processing reads...', file=sys.stderr)
-    for record in reads.keys():
-        rp += 1
-        output = process_record(reads[record], args)
-        if output == '':
-            rd += 1
-            continue
-        else:
-            if args.o is None:
-                print(output)
-            else:
-                res.append(output)
-            rf += 1
-        print(f'Reads processed/found/discarded: {rp}/{rf}/{rd}', end='\r', flush=True, file=sys.stderr)
+    print(f'Processing sequences in {args.t} threads...', file=sys.stderr)
+    with Pool(processes=args.t) as pool:
+        result = pool.starmap(worker, zip(records, repeat(args)))
 
-    print('Writing output...', file=sys.stderr)
-    if args.o is not None:
+    if args.o is None:
+        print(''.join(result))
+    else:
         with open(args.o, 'w') as outfile:
-            [outfile.write(i) for i in res]
+            outfile.write(''.join(result))
 
     print('Done', file=sys.stderr)
-
-
-
-
-
-
