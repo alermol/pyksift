@@ -4,6 +4,10 @@ from statistics import median
 from pathlib import Path
 from multiprocessing import Pool
 from itertools import repeat
+import tempfile
+import shutil
+from subprocess import run
+import os
 
 
 def parser_resolve_path(path):
@@ -62,6 +66,11 @@ if __name__ == '__main__':
     assert args.k <= args.l, 'kmer length (-k) must be greater than minumum length of the sequence (-l)'
 
 
+    if shutil.which('yass') is None:
+        sys.exit('yass executable is not found in PATH variable. Exit.')
+    else:
+        print('yass executable is found in PATH variable. Continue.', file=sys.stderr)
+
     def worker(record, args):
         if (len(record.seq) < args.l) or (args.n and ('N' in str(record.seq))):
             return ''
@@ -80,9 +89,26 @@ if __name__ == '__main__':
     print(f'Processing sequences in {args.t} threads...', file=sys.stderr)
     with Pool(processes=args.t) as pool:
         result = pool.starmap(worker, zip(records, repeat(args)))
+    result = [i for i in result if i != '']
 
     print(f'Writing {len(result)} selected sequences in file...', file=sys.stderr)
     with open(args.o, 'w') as outfile:
         outfile.write(''.join(result))
+
+    print('Self-alignment of selected reads...', file=sys.stderr)
+    os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
+    for seq in result:
+        seq_name = seq.strip('>').split('\n')[0]
+        with tempfile.NamedTemporaryFile(mode='w', dir=args.o.parent, suffix='.fa') as tfasta:
+            tfasta.write(seq)
+            yass_out = run(f'yass -d 3 {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
+            yass_out = [i for i in yass_out.stdout.decode().split('\n') if i != '']
+            with open(f'{args.o}.yass.tsv', 'a') as outfile:
+                for line in yass_out:
+                    if line.startswith('#'):
+                        line = line.strip("#")
+                        outfile.write(f'# seq. name\t{line}\n')
+                    else:
+                        outfile.write(f'{seq_name}\t{line}\n')
 
     print('Done', file=sys.stderr)
