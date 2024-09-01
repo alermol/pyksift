@@ -1,13 +1,14 @@
-from Bio import SeqIO
-import sys
-from statistics import median
-from pathlib import Path
-from multiprocessing import Pool
-from itertools import repeat
-import tempfile
-import shutil
-from subprocess import run
 import os
+import shutil
+import sys
+import tempfile
+from itertools import repeat
+from multiprocessing import Pool
+from pathlib import Path
+from statistics import median
+from subprocess import run
+
+from Bio import SeqIO
 
 
 def parser_resolve_path(path):
