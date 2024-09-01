@@ -55,6 +55,8 @@ if __name__ == '__main__':
     parser.add_argument('-m', help='minimum median of the top J kmers (default: 5)', type=int, metavar='minMedian', default=5)
     parser.add_argument('-l', help='minumum length of the sequence to consider (default: 1000)', type=int, metavar='minLength', default=1000)
     parser.add_argument('-n', help='include reads containing N', action='store_true')
+    parser.add_argument('-y', help='additional parameters for yass, passing as a string (default: "-E 1.0E-5 -w 0")', type=str, default='-E 1.0E-5 -w 0',
+                        metavar='yassParams')
 
     args = parser.parse_args()
 
@@ -103,7 +105,7 @@ if __name__ == '__main__':
         seq_name = seq.strip('>').split('\n')[0]
         with tempfile.NamedTemporaryFile(mode='w', dir=args.o.parent, suffix='.fa') as tfasta:
             tfasta.write(seq)
-            yass_out = run(f'{yass_ex} -d 3 -E 1.0E-5 -w 0 {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
+            yass_out = run(f'{yass_ex} -d 3 {args.y} {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
             yass_out = [i for i in yass_out.stdout.decode().split('\n') if i != '']
             with open(f'{args.o}.yass.tsv', 'a') as outfile:
                 for line in yass_out:
