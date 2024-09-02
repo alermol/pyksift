@@ -101,6 +101,7 @@ if __name__ == '__main__':
 
     print('Self-alignment of selected reads...', file=sys.stderr)
     os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
+    add_header = True
     for seq in result:
         seq_name = seq.strip('>').split('\n')[0]
         with tempfile.NamedTemporaryFile(mode='w', dir=args.o.parent, suffix='.fa') as tfasta:
@@ -110,8 +111,12 @@ if __name__ == '__main__':
             with open(f'{args.o}.yass.tsv', 'a') as outfile:
                 for line in yass_out:
                     if line.startswith('#'):
-                        line = line.strip("#")
-                        outfile.write(f'# seq. name\t{line}\n')
+                        if add_header:
+                            line = line.strip("#")
+                            outfile.write(f'# seq. name\t{line}\n')
+                            add_header = False
+                        else:
+                            continue
                     else:
                         outfile.write(f'{seq_name}\t{line}\n')
 
