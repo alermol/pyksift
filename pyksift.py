@@ -99,25 +99,26 @@ if __name__ == '__main__':
     with open(args.o, 'w') as outfile:
         outfile.write(''.join(result))
 
-    print('Self-alignment of selected reads...', file=sys.stderr)
-    os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
-    add_header = True
-    for seq in result:
+    print(f'Self-alignment of selected reads in {args.t} threads...', file=sys.stderr)
+
+
+    def worker(seq, args, yass_ex_path):
         seq_name = seq.strip('>').split('\n')[0]
         with tempfile.NamedTemporaryFile(mode='w', dir=args.o.parent, suffix='.fa') as tfasta:
             tfasta.write(seq)
             yass_out = run(f'{yass_ex} -d 3 {args.y} {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
-            yass_out = [i for i in yass_out.stdout.decode().split('\n') if i != '']
-            with open(f'{args.o}.yass.tsv', 'a') as outfile:
-                for line in yass_out:
-                    if line.startswith('#'):
-                        if add_header:
-                            line = line.strip("#")
-                            outfile.write(f'# seq. name\t{line}\n')
-                            add_header = False
-                        else:
-                            continue
-                    else:
-                        outfile.write(f'{seq_name}\t{line}\n')
+        return [f'{seq_name}\t{i}' for i in yass_out.stdout.decode().split('\n')[1:] if i != '']
+
+
+    with Pool(processes=args.t) as pool:
+        yass_result = pool.starmap(worker, zip(result, repeat(args), repeat(yass_ex)))
+
+    print(f'Writing yass output in file...', file=sys.stderr)
+    os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
+    add_header = True
+    with open(f'{args.o}.yass.tsv', 'a') as outfile:
+        for output in yass_result:
+            for line in output:
+                outfile.write(f'{line}\n')
 
     print('Done', file=sys.stderr)
