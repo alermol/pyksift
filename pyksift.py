@@ -68,6 +68,7 @@ if __name__ == '__main__':
     assert args.l > 0, 'minumum length of the sequence (-l) must be >0'
     assert args.k <= args.l, 'kmer length (-k) must be greater than minumum length of the sequence (-l)'
 
+    #TODO: add logger instead print
 
     if shutil.which('yass') is None:
         sys.exit('yass executable is not found in PATH variable. Exit.')
@@ -92,7 +93,7 @@ if __name__ == '__main__':
 
     print(f'Processing sequences in {args.t} threads...', file=sys.stderr)
     with Pool(processes=args.t) as pool:
-        result = pool.starmap(worker, zip(records, repeat(args)))
+        result = pool.starmap(worker, zip(records, repeat(args))) #TODO: add progress indicator
     result = [i for i in result if i != '']
 
     print(f'Writing {len(result)} selected sequences in file...', file=sys.stderr)
@@ -106,12 +107,12 @@ if __name__ == '__main__':
         seq_name = seq.strip('>').split('\n')[0]
         with tempfile.NamedTemporaryFile(mode='w', dir=args.o.parent, suffix='.fa') as tfasta:
             tfasta.write(seq)
-            yass_out = run(f'{yass_ex} -d 3 {args.y} {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
+            yass_out = run(f'{yass_ex_path} -d 3 {args.y} {tfasta.name} {tfasta.name}', shell=True, capture_output=True)
         return [f'{seq_name}\t{i}' for i in yass_out.stdout.decode().split('\n')[1:] if i != '']
 
 
     with Pool(processes=args.t) as pool:
-        yass_result = pool.starmap(worker, zip(result, repeat(args), repeat(yass_ex)))
+        yass_result = pool.starmap(worker, zip(result, repeat(args), repeat(yass_ex))) #TODO: add progress indicator
 
     print(f'Writing yass output in file...', file=sys.stderr)
     os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
