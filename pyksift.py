@@ -8,6 +8,7 @@ from pathlib import Path
 from statistics import median
 from subprocess import run
 
+import tqdm
 from Bio import SeqIO
 
 
@@ -93,7 +94,7 @@ if __name__ == '__main__':
 
     print(f'Processing sequences in {args.t} threads...', file=sys.stderr)
     with Pool(processes=args.t) as pool:
-        result = pool.starmap(worker, zip(records, repeat(args))) #TODO: add progress indicator
+        result = pool.starmap(worker, tqdm.tqdm(zip(records, repeat(args)), total=len(records)), chunksize=1)
     result = [i for i in result if i != '']
 
     print(f'Writing {len(result)} selected sequences in file...', file=sys.stderr)
@@ -112,7 +113,7 @@ if __name__ == '__main__':
 
 
     with Pool(processes=args.t) as pool:
-        yass_result = pool.starmap(worker, zip(result, repeat(args), repeat(yass_ex))) #TODO: add progress indicator
+        yass_result = pool.starmap(worker, tqdm.tqdm(zip(result, repeat(args), repeat(yass_ex)), total=len(result)), chunksize=1)
 
     print(f'Writing yass output in file...', file=sys.stderr)
     os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
