@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import sys
@@ -69,13 +70,13 @@ if __name__ == '__main__':
     assert args.l > 0, 'minumum length of the sequence (-l) must be >0'
     assert args.k <= args.l, 'kmer length (-k) must be greater than minumum length of the sequence (-l)'
 
-    #TODO: add logger instead print
+    logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
 
     if shutil.which('yass') is None:
         sys.exit('yass executable is not found in PATH variable. Exit.')
     else:
         yass_ex = shutil.which('yass')
-        print('yass executable is found in PATH variable. Continue.', file=sys.stderr)
+        logging.info('yass executable is found in PATH variable. Continue.')
 
     def worker(record, args):
         if (len(record.seq) < args.l) or (args.n and ('N' in str(record.seq))):
@@ -89,19 +90,19 @@ if __name__ == '__main__':
             else:
                 return ''
 
-    print('Reading fasta file...', file=sys.stderr)
+    logging.info('Reading fasta file...')
     records = list(SeqIO.parse(args.infasta, 'fasta'))
 
-    print(f'Processing sequences in {args.t} threads...', file=sys.stderr)
+    logging.info(f'Processing sequences in {args.t} threads...')
     with Pool(processes=args.t) as pool:
-        result = pool.starmap(worker, tqdm.tqdm(zip(records, repeat(args)), total=len(records)), chunksize=1)
+        result = pool.starmap(worker, tqdm.tqdm(zip(records, repeat(args)), total=len(records)), chunksize=1) # modify bar
     result = [i for i in result if i != '']
 
-    print(f'Writing {len(result)} selected sequences in file...', file=sys.stderr)
+    logging.info(f'Writing {len(result)} selected sequences in file...')
     with open(args.o, 'w') as outfile:
         outfile.write(''.join(result))
 
-    print(f'Self-alignment of selected reads in {args.t} threads...', file=sys.stderr)
+    logging.info(f'Self-alignment of selected reads in {args.t} threads...')
 
 
     def worker(seq, args, yass_ex_path):
@@ -113,9 +114,9 @@ if __name__ == '__main__':
 
 
     with Pool(processes=args.t) as pool:
-        yass_result = pool.starmap(worker, tqdm.tqdm(zip(result, repeat(args), repeat(yass_ex)), total=len(result)), chunksize=1)
+        yass_result = pool.starmap(worker, tqdm.tqdm(zip(result, repeat(args), repeat(yass_ex)), total=len(result)), chunksize=1) # modify bar
 
-    print(f'Writing yass output in file...', file=sys.stderr)
+    logging.info('Writing yass output in file...')
     os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
     add_header = True
     with open(f'{args.o}.yass.tsv', 'a') as outfile:
@@ -123,4 +124,4 @@ if __name__ == '__main__':
             for line in output:
                 outfile.write(f'{line}\n')
 
-    print('Done', file=sys.stderr)
+    logging.info('Done')
