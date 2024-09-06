@@ -95,7 +95,8 @@ if __name__ == '__main__':
 
     logging.info(f'Processing sequences in {args.t} threads...')
     with Pool(processes=args.t) as pool:
-        result = pool.starmap(worker, tqdm.tqdm(zip(records, repeat(args)), total=len(records)), chunksize=1) # modify bar
+        result = pool.starmap(worker, tqdm.tqdm(zip(records, repeat(args)), total=len(records), 
+                                                unit='seq', unit_scale=True), chunksize=1)
     result = [i for i in result if i != '']
 
     logging.info(f'Writing {len(result)} selected sequences in file...')
@@ -114,7 +115,8 @@ if __name__ == '__main__':
 
 
     with Pool(processes=args.t) as pool:
-        yass_result = pool.starmap(worker, tqdm.tqdm(zip(result, repeat(args), repeat(yass_ex)), total=len(result)), chunksize=1) # modify bar
+        yass_result = pool.starmap(worker, tqdm.tqdm(zip(result, repeat(args), repeat(yass_ex)), total=len(result), 
+                                                unit='seq', unit_scale=True), chunksize=1)
 
     logging.info('Writing yass output in file...')
     os.remove(f'{args.o}.yass.tsv') if Path(f'{args.o}.yass.tsv').exists() else ''
