@@ -1,3 +1,3 @@
 # pyksift
 
-Python realization of ksift, which is not working for some reason
+Python realization of [ksift](https://github.com/dvera/ksift)
