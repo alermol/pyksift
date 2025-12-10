@@ -2,7 +2,7 @@ name: pyksift
 channels:
   - conda-forge
 dependencies:
-  - python=3.10
+  - python
   - yass
   - tqdm
   - biopython
