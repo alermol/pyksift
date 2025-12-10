@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import logging
 import os
 import shutil
@@ -44,7 +46,7 @@ def count_kmers(seq, k, max_at):
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(usage='python pyksift.py -o out.fa sequences.fa')
+    parser = argparse.ArgumentParser(usage='pyksift.py -o out.fa sequences.fa')
 
     parser.add_argument('infasta', help='input fasta file', type=parser_resolve_path)
     parser.add_argument('-o', help='name of output fasta', type=parser_resolve_path, metavar='outFasta', required=True)
